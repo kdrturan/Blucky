@@ -87,9 +87,11 @@ export default function ProfilePage() {
 		)
 	}
 
-	const name = content.name || 'Unknown'
-	const bio = content.bio || ''
-	const avatarCid = content.avatar_cid || ''
+	// Decode byte arrays to strings
+	const decoder = new TextDecoder()
+	const name = content.name ? decoder.decode(new Uint8Array(content.name)) : 'Unknown'
+	const bio = content.bio ? decoder.decode(new Uint8Array(content.bio)) : ''
+	const avatarCid = content.avatar_cid ? decoder.decode(new Uint8Array(content.avatar_cid)) : ''
 	const theme = Number(content.theme || 1)
 	const links = content.links || []
 
@@ -169,13 +171,26 @@ export default function ProfilePage() {
 									)}
 								</div>
 							) : (
-								links.map((link: any, index: number) => (
-									<LinkCard
-										key={index}
-										label={link.fields?.label || link.label || 'Untitled'}
-										url={link.fields?.url || link.url || '#'}
-									/>
-								))
+								links.map((link: any, index: number) => {
+									// Decode link label and url
+									const linkLabel = link.fields?.label || link.label
+									const linkUrl = link.fields?.url || link.url
+
+									const decodedLabel = linkLabel
+										? decoder.decode(new Uint8Array(linkLabel))
+										: 'Untitled'
+									const decodedUrl = linkUrl
+										? decoder.decode(new Uint8Array(linkUrl))
+										: '#'
+
+									return (
+										<LinkCard
+											key={index}
+											label={decodedLabel}
+											url={decodedUrl}
+										/>
+									)
+								})
 							)}
 						</div>
 
@@ -219,4 +234,5 @@ export default function ProfilePage() {
 		</div>
 	)
 }
+
 

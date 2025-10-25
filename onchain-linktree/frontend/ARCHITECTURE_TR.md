@@ -398,3 +398,4 @@ npm run dev
 
 **F12 açın ve console'u kontrol edin - detaylı logları göreceksiniz! 🎉**
 
+

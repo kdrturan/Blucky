@@ -444,3 +444,4 @@ vercel
 
 **Herhangi bir sorunuz olursa sorun! Frontend tamamen hazır ve çalışıyor! 🚀**
 
+

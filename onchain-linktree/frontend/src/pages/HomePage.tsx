@@ -1,10 +1,33 @@
 import { Link } from 'react-router-dom'
 import { useCurrentAccount, useSuiClientQuery } from '@mysten/dapp-kit'
-import { Sparkles, Link as LinkIcon, Shield, Zap } from 'lucide-react'
+import { Sparkles, Link as LinkIcon, Shield, Zap, ExternalLink, Edit } from 'lucide-react'
 import Navbar from '@/components/Navbar'
+import { useContract } from '@/hooks/useContract'
 
 export default function HomePage() {
 	const account = useCurrentAccount()
+	const contract = useContract()
+
+	// Fetch user's profiles
+	const { data: ownedObjects } = useSuiClientQuery(
+		'getOwnedObjects',
+		{
+			owner: account?.address as string,
+			options: {
+				showType: true,
+				showContent: true,
+				showDisplay: true,
+			},
+		},
+		{
+			enabled: !!account,
+		}
+	)
+
+	// Filter Profile objects
+	const profiles = ownedObjects?.data?.filter((obj) =>
+		obj.data?.type?.includes(`${contract.packageId}::${contract.moduleName}::Profile`)
+	) || []
 
 	return (
 		<div className="min-h-screen">
@@ -38,13 +61,23 @@ export default function HomePage() {
 					{/* CTA Buttons */}
 					<div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
 						{account ? (
-							<Link
-								to="/create"
-								className="btn btn-primary text-lg px-8 py-4 shadow-2xl hover:shadow-3xl"
-							>
-								<Sparkles className="w-5 h-5" />
-								Create Your Profile
-							</Link>
+							<>
+								<Link
+									to="/create"
+									className="btn btn-primary text-lg px-8 py-4 shadow-2xl hover:shadow-3xl"
+								>
+									<Sparkles className="w-5 h-5" />
+									Create Your Profile
+								</Link>
+								{profiles.length > 0 && (
+									<a
+										href="#my-profiles"
+										className="btn btn-secondary text-lg px-8 py-4"
+									>
+										View My Profiles ({profiles.length})
+									</a>
+								)}
+							</>
 						) : (
 							<div className="card max-w-md">
 								<p className="text-gray-600 mb-4">
@@ -93,6 +126,84 @@ export default function HomePage() {
 						</div>
 					</div>
 
+					{/* My Profiles Section */}
+					{account && profiles.length > 0 && (
+						<div id="my-profiles" className="pt-16 space-y-8">
+							<div className="flex items-center justify-between">
+								<h2 className="text-3xl font-bold">My Profiles</h2>
+								<Link
+									to="/create"
+									className="btn btn-primary"
+								>
+									<Sparkles className="w-4 h-4" />
+									Create New
+								</Link>
+							</div>
+
+							<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+								{profiles.map((profile) => {
+									const content = profile.data?.content as any
+									const fields = content?.fields || {}
+									const objectId = profile.data?.objectId || ''
+
+									return (
+										<div key={objectId} className="card hover:shadow-2xl transition-all">
+											<div className="space-y-4">
+												{/* Profile Header */}
+												<div className="flex items-start justify-between">
+													<div className="flex items-center gap-3">
+														<img
+															src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${fields.name || 'default'}`}
+															alt={fields.name}
+															className="w-12 h-12 rounded-full"
+														/>
+														<div>
+															<h3 className="font-bold text-lg">
+																{new TextDecoder().decode(
+																	new Uint8Array(fields.name || [])
+																) || 'Unnamed'}
+															</h3>
+															<p className="text-sm text-gray-500">
+																{fields.links?.length || 0} links
+															</p>
+														</div>
+													</div>
+												</div>
+
+												{/* Bio */}
+												{fields.bio && (
+													<p className="text-gray-600 text-sm line-clamp-2">
+														{new TextDecoder().decode(
+															new Uint8Array(fields.bio || [])
+														)}
+													</p>
+												)}
+
+												{/* Actions */}
+												<div className="flex gap-2 pt-2">
+													<Link
+														to={`/profile/${objectId}`}
+														className="btn btn-secondary flex-1"
+													>
+														<ExternalLink className="w-4 h-4" />
+														View
+													</Link>
+													<Link
+														to={`/edit/${objectId}`}
+														className="btn btn-primary flex-1"
+													>
+														<Edit className="w-4 h-4" />
+														Edit
+													</Link>
+												</div>
+											</div>
+										</div>
+									)
+								})}
+							</div>
+						</div>
+					)}
+
 					{/* How it works */}
 					<div className="pt-16 space-y-8">
 						<h2 className="text-3xl font-bold">How It Works</h2>
@@ -140,4 +251,5 @@ export default function HomePage() {
 		</div>
 	)
 }
+
 

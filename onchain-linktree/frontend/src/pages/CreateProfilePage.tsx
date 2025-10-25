@@ -2,24 +2,13 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit'
 import { Transaction } from '@mysten/sui/transactions'
-import { Plus, Trash2, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import Navbar from '@/components/Navbar'
 import { toast } from '@/components/ui/Toaster'
 import { THEMES } from '@/config/constants'
 import { useContract, CONTRACT_FUNCTIONS } from '@/hooks/useContract'
-import {
-	extractProfileId,
-	logTransactionResult,
-	formatAddress,
-	getExplorerTxUrl
-} from '@/utils/transaction'
-
-interface LinkInput {
-	id: string
-	label: string
-	url: string
-}
+import { formatAddress, getExplorerTxUrl } from '@/utils/transaction'
 
 export default function CreateProfilePage() {
 	const account = useCurrentAccount()
@@ -32,22 +21,7 @@ export default function CreateProfilePage() {
 	const [bio, setBio] = useState('')
 	const [avatarCid, setAvatarCid] = useState('')
 	const [theme, setTheme] = useState(1)
-	const [links, setLinks] = useState<LinkInput[]>([])
 	const [loading, setLoading] = useState(false)
-
-	const addLink = () => {
-		setLinks([...links, { id: Math.random().toString(), label: '', url: '' }])
-	}
-
-	const updateLink = (id: string, field: 'label' | 'url', value: string) => {
-		setLinks(links.map(link =>
-			link.id === id ? { ...link, [field]: value } : link
-		))
-	}
-
-	const removeLink = (id: string) => {
-		setLinks(links.filter(link => link.id !== id))
-	}
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
@@ -87,62 +61,46 @@ export default function CreateProfilePage() {
 
 			signAndExecute(
 				{
-					transaction: tx,
+					transaction: tx as any,
 				},
 				{
 					onSuccess: async (result) => {
-						// Log detailed transaction info
-						logTransactionResult(result, 'Create Profile')
+						console.log('✅ Transaction successful:', result)
+						console.log('📋 Transaction Digest:', result.digest)
 
-						// Extract profile ID from transaction
-						const profileId = extractProfileId(result)
+						// Wait for transaction to be indexed
+						await new Promise(resolve => setTimeout(resolve, 2000))
 
-						if (profileId) {
-							// Success with profile ID
-							toast.success(
-								<div className="space-y-1">
-									<p className="font-semibold">Profile Created! 🎉</p>
-									<p className="text-xs">ID: {formatAddress(profileId)}</p>
-									<a
-										href={getExplorerTxUrl(result.digest)}
-										target="_blank"
-										rel="noopener noreferrer"
-										className="text-blue-500 hover:underline text-xs"
-									>
-										View on Explorer →
-									</a>
-								</div>
-							)
+						// Get created profile from wallet
+						const objects = await client.getOwnedObjects({
+							owner: account.address,
+							options: {
+								showType: true,
+								showContent: true,
+							},
+						})
+
+						// Find the Profile object
+						const profileObject = objects.data.find(obj =>
+							obj.data?.type?.includes(`${contract.packageId}::${contract.moduleName}::Profile`)
+						)
+
+						if (profileObject) {
+							const profileId = profileObject.data?.objectId
+							console.log('✨ Profile ID:', profileId)
+
+							toast.success(`Profile created! ID: ${formatAddress(profileId || '')}`)
+
+							// View on explorer
+							console.log('🔗 View on Explorer:', getExplorerTxUrl(result.digest))
 
 							// Navigate to profile page
-							setTimeout(() => {
-								navigate(`/profile/${profileId}`)
-							}, 1500)
+							navigate(`/profile/${profileId}`)
 						} else {
-							// Fallback: profile created but ID not found immediately
-							console.warn('⚠️ Profile object not found in transaction results')
+							// Profile not found
+							console.warn('⚠️ Profile object not found')
 							toast.success(`Profile created! TX: ${formatAddress(result.digest)}`)
-
-							// Fallback: wait and fetch objects
-							setTimeout(async () => {
-								const objects = await client.getOwnedObjects({
-									owner: account.address,
-									options: {
-										showType: true,
-										showContent: true,
-									},
-								})
-
-								const profile = objects.data.find(obj =>
-									obj.data?.type?.includes(`${contract.packageId}::${contract.moduleName}::Profile`)
-								)
-
-								if (profile) {
-									navigate(`/profile/${profile.data?.objectId}`)
-								} else {
-									navigate('/')
-								}
-							}, 2000)
+							navigate('/')
 						}
 					},
 					onError: (error) => {

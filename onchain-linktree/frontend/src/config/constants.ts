@@ -1,6 +1,6 @@
-// Deployed contract addresses (Latest deployment - FINAL)
-export const PACKAGE_ID = '0x9d529f55d5d33e608614a4027259662db5aa9b3199d753aab196f0c5385fc590'
-export const REGISTRY_ID = '0x1b63e950d0c5b297a3d664577821af3427584e2a23e8e8c4a79492c956958e91'
+// Deployed contract addresses (Latest deployment - FINAL WORKING)
+export const PACKAGE_ID = '0x83ca761ced63b08478da7b3f6bceb21c47c03db8f02c3af1b050d9f099b375c8'
+export const REGISTRY_ID = '0xa5295d8dd2afd20179ea06482a69c146a6d96841b4ccda85b179bc77271be4d2'
 
 export const MODULE_NAME = 'linktree'
 

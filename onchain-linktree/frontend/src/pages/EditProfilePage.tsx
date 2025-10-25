@@ -6,7 +6,9 @@ import { ArrowLeft, Plus, Trash2, Save } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import LinkCard from '@/components/LinkCard'
 import { toast } from '@/components/ui/Toaster'
-import { PACKAGE_ID, MODULE_NAME, THEMES } from '@/config/constants'
+import { THEMES } from '@/config/constants'
+import { useContract } from '@/hooks/useContract'
+import { formatAddress, getExplorerTxUrl } from '@/utils/transaction'
 
 interface LinkInput {
 	id: string
@@ -20,6 +22,7 @@ export default function EditProfilePage() {
 	const account = useCurrentAccount()
 	const navigate = useNavigate()
 	const { mutate: signAndExecute } = useSignAndExecuteTransaction()
+	const contract = useContract()
 
 	const [bio, setBio] = useState('')
 	const [avatarCid, setAvatarCid] = useState('')
@@ -47,18 +50,33 @@ export default function EditProfilePage() {
 		if (profileData?.data?.content) {
 			// @ts-ignore
 			const content = profileData.data.content.fields
-			setBio(content.bio || '')
-			setAvatarCid(content.avatar_cid || '')
+			const decoder = new TextDecoder()
+
+			// Decode byte arrays
+			const decodedBio = content.bio
+				? decoder.decode(new Uint8Array(content.bio))
+				: ''
+			const decodedAvatar = content.avatar_cid
+				? decoder.decode(new Uint8Array(content.avatar_cid))
+				: ''
+
+			setBio(decodedBio)
+			setAvatarCid(decodedAvatar)
 			setTheme(Number(content.theme || 1))
 
 			const existingLinks = content.links || []
 			setLinks(
-				existingLinks.map((link: any, index: number) => ({
-					id: Math.random().toString(),
-					label: link.fields?.label || link.label || '',
-					url: link.fields?.url || link.url || '',
-					index,
-				}))
+				existingLinks.map((link: any, index: number) => {
+					const linkLabel = link.fields?.label || link.label
+					const linkUrl = link.fields?.url || link.url
+
+					return {
+						id: Math.random().toString(),
+						label: linkLabel ? decoder.decode(new Uint8Array(linkLabel)) : '',
+						url: linkUrl ? decoder.decode(new Uint8Array(linkUrl)) : '',
+						index,
+					}
+				})
 			)
 		}
 	}, [profileData])
@@ -88,7 +106,7 @@ export default function EditProfilePage() {
 		try {
 			const tx = new Transaction()
 			tx.moveCall({
-				target: `${PACKAGE_ID}::${MODULE_NAME}::set_bio`,
+				target: contract.getTarget('set_bio'),
 				arguments: [
 					tx.object(objectId),
 					tx.pure.string(bio),
@@ -96,7 +114,7 @@ export default function EditProfilePage() {
 			})
 
 			signAndExecute(
-				{ transaction: tx },
+				{ transaction: tx as any },
 				{
 					onSuccess: (result) => {
 						console.log('✅ Bio updated! TX:', result.digest)
@@ -123,7 +141,7 @@ export default function EditProfilePage() {
 		try {
 			const tx = new Transaction()
 			tx.moveCall({
-				target: `${PACKAGE_ID}::${MODULE_NAME}::set_avatar`,
+				target: contract.getTarget('set_avatar'),
 				arguments: [
 					tx.object(objectId),
 					tx.pure.string(avatarCid),
@@ -131,7 +149,7 @@ export default function EditProfilePage() {
 			})
 
 			signAndExecute(
-				{ transaction: tx },
+				{ transaction: tx as any },
 				{
 					onSuccess: (result) => {
 						console.log('✅ Avatar updated! TX:', result.digest)
@@ -158,7 +176,7 @@ export default function EditProfilePage() {
 		try {
 			const tx = new Transaction()
 			tx.moveCall({
-				target: `${PACKAGE_ID}::${MODULE_NAME}::set_theme`,
+				target: contract.getTarget('set_theme'),
 				arguments: [
 					tx.object(objectId),
 					tx.pure.u64(theme),
@@ -166,7 +184,7 @@ export default function EditProfilePage() {
 			})
 
 			signAndExecute(
-				{ transaction: tx },
+				{ transaction: tx as any },
 				{
 					onSuccess: (result) => {
 						console.log('✅ Theme updated! TX:', result.digest)
@@ -193,7 +211,7 @@ export default function EditProfilePage() {
 		try {
 			const tx = new Transaction()
 			tx.moveCall({
-				target: `${PACKAGE_ID}::${MODULE_NAME}::add_link`,
+				target: contract.getTarget('add_link'),
 				arguments: [
 					tx.object(objectId),
 					tx.pure.string(label),
@@ -202,7 +220,7 @@ export default function EditProfilePage() {
 			})
 
 			signAndExecute(
-				{ transaction: tx },
+				{ transaction: tx as any },
 				{
 					onSuccess: (result) => {
 						console.log('✅ Link added! TX:', result.digest)
@@ -229,7 +247,7 @@ export default function EditProfilePage() {
 		try {
 			const tx = new Transaction()
 			tx.moveCall({
-				target: `${PACKAGE_ID}::${MODULE_NAME}::remove_link_at`,
+				target: contract.getTarget('remove_link_at'),
 				arguments: [
 					tx.object(objectId),
 					tx.pure.u64(index),
@@ -237,7 +255,7 @@ export default function EditProfilePage() {
 			})
 
 			signAndExecute(
-				{ transaction: tx },
+				{ transaction: tx as any },
 				{
 					onSuccess: (result) => {
 						console.log('✅ Link removed! TX:', result.digest)
