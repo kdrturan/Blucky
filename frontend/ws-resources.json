@@ -1,0 +1,10 @@
+{
+  "routes": {
+    "/": "/index.html",
+    "/create": "/index.html",
+    "/edit/*": "/index.html",
+    "/profile/*": "/index.html",
+    "/test-features": "/index.html",
+    "/*": "/index.html"
+  }
+}
