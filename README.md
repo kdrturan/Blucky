@@ -284,10 +284,6 @@ contexts:
 
 <img width="1684" height="976" alt="Ekran Resmi 2025-10-27 14 25 35" src="https://github.com/user-attachments/assets/98e8b9ad-31bb-42e2-be69-e722c3776ebe" />
 
-<img width="1697" height="946" alt="Ekran Resmi 2025-10-27 14 26 01" src="https://github.com/user-attachments/assets/d786695d-8bc0-431d-93bf-5aec53508bcb" />
-
-<img width="1697" height="965" alt="Ekran Resmi 2025-10-27 14 26 17" src="https://github.com/user-attachments/assets/0df90cc6-f99f-42fc-b184-09ed3eff9b04" />
-
 <img width="1447" height="973" alt="Ekran Resmi 2025-10-27 14 26 58" src="https://github.com/user-attachments/assets/6991183c-5f21-440f-8bb5-8555f900fd2c" />
 
 Demo includes:
